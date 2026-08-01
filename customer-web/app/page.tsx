@@ -1,7 +1,53 @@
-export default function Home() {
-  return (
-    <main style={{ backgroundColor: "#f7faf7", minHeight: "100vh" }}>
+"use client";
 
+import { useState } from "react";
+
+type Product = {
+  image: string;
+  name: string;
+  price: number;
+};
+
+const products: Product[] = [
+  {
+    image: "🥔",
+    name: "Fresh Potato",
+    price: 40,
+  },
+  {
+    image: "🍅",
+    name: "Fresh Tomato",
+    price: 50,
+  },
+  {
+    image: "🧅",
+    name: "Fresh Onion",
+    price: 45,
+  },
+  {
+    image: "🥕",
+    name: "Fresh Carrot",
+    price: 60,
+  },
+];
+
+export default function Home() {
+  const [cart, setCart] = useState<Product[]>([]);
+
+  const addToCart = (product: Product) => {
+    setCart([...cart, product]);
+  };
+
+  const total = cart.reduce((sum, product) => sum + product.price, 0);
+
+  return (
+    <main
+      style={{
+        backgroundColor: "#f7faf7",
+        minHeight: "100vh",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
       {/* HEADER */}
       <header
         style={{
@@ -29,9 +75,7 @@ export default function Home() {
 
         {/* LOCATION */}
         <div style={{ minWidth: "180px" }}>
-          <div style={{ fontSize: "13px", color: "#777" }}>
-            Deliver to
-          </div>
+          <div style={{ fontSize: "13px", color: "#777" }}>Deliver to</div>
 
           <div
             style={{
@@ -88,7 +132,7 @@ export default function Home() {
             cursor: "pointer",
           }}
         >
-          🛒 Cart
+          🛒 Cart ({cart.length})
         </button>
       </header>
 
@@ -112,7 +156,49 @@ export default function Home() {
       </nav>
 
       {/* HERO */}
-            {/* CATEGORIES */}
+      <section
+        style={{
+          padding: "70px 40px",
+          textAlign: "center",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: "48px",
+            color: "#166534",
+            marginBottom: "15px",
+          }}
+        >
+          Fresh Vegetables at Your Doorstep 🥬
+        </h2>
+
+        <p
+          style={{
+            fontSize: "19px",
+            color: "#555",
+            marginBottom: "30px",
+          }}
+        >
+          Fresh • Quality • Affordable • Home Delivery
+        </p>
+
+        <button
+          style={{
+            backgroundColor: "#16a34a",
+            color: "white",
+            border: "none",
+            padding: "15px 32px",
+            borderRadius: "10px",
+            fontSize: "17px",
+            fontWeight: "600",
+            cursor: "pointer",
+          }}
+        >
+          Shop Fresh Vegetables →
+        </button>
+      </section>
+
+      {/* CATEGORIES */}
       <section
         style={{
           padding: "20px 40px 50px",
@@ -195,14 +281,9 @@ export default function Home() {
             gap: "20px",
           }}
         >
-          {[
-            ["🥔", "Fresh Potato", "₹40 / kg"],
-            ["🍅", "Fresh Tomato", "₹50 / kg"],
-            ["🧅", "Fresh Onion", "₹45 / kg"],
-            ["🥕", "Fresh Carrot", "₹60 / kg"],
-          ].map(([image, name, price]) => (
+          {products.map((product) => (
             <div
-              key={name}
+              key={product.name}
               style={{
                 backgroundColor: "white",
                 borderRadius: "14px",
@@ -222,7 +303,7 @@ export default function Home() {
                   fontSize: "75px",
                 }}
               >
-                {image}
+                {product.image}
               </div>
 
               <h3
@@ -232,7 +313,7 @@ export default function Home() {
                   color: "#222",
                 }}
               >
-                {name}
+                {product.name}
               </h3>
 
               <p
@@ -242,10 +323,11 @@ export default function Home() {
                   fontWeight: "700",
                 }}
               >
-                {price}
+                ₹{product.price} / kg
               </p>
 
               <button
+                onClick={() => addToCart(product)}
                 style={{
                   width: "100%",
                   backgroundColor: "#16a34a",
@@ -263,48 +345,80 @@ export default function Home() {
           ))}
         </div>
       </section>
-      <section
-        style={{
-          padding: "70px 40px",
-          textAlign: "center",
-        }}
-      >
-        <h2
+
+      {/* CART SUMMARY */}
+      {cart.length > 0 && (
+        <section
           style={{
-            fontSize: "48px",
-            color: "#166534",
-            marginBottom: "15px",
+            position: "fixed",
+            right: "25px",
+            bottom: "25px",
+            width: "320px",
+            backgroundColor: "white",
+            borderRadius: "15px",
+            padding: "20px",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.18)",
+            border: "1px solid #e5e7eb",
           }}
         >
-          Fresh Vegetables at Your Doorstep 🥬
-        </h2>
+          <h2
+            style={{
+              marginTop: 0,
+              color: "#166534",
+            }}
+          >
+            🛒 Your Cart
+          </h2>
 
-        <p
-          style={{
-            fontSize: "19px",
-            color: "#555",
-            marginBottom: "30px",
-          }}
-        >
-          Fresh • Quality • Affordable • Home Delivery
-        </p>
+          {cart.map((product, index) => (
+            <div
+              key={index}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "8px 0",
+                borderBottom: "1px solid #eee",
+              }}
+            >
+              <span>
+                {product.image} {product.name}
+              </span>
 
-        <button
-          style={{
-            backgroundColor: "#16a34a",
-            color: "white",
-            border: "none",
-            padding: "15px 32px",
-            borderRadius: "10px",
-            fontSize: "17px",
-            fontWeight: "600",
-            cursor: "pointer",
-          }}
-        >
-          Shop Fresh Vegetables →
-        </button>
-      </section>
+              <strong>₹{product.price}</strong>
+            </div>
+          ))}
 
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: "15px",
+              fontSize: "20px",
+              fontWeight: "800",
+            }}
+          >
+            <span>Total</span>
+            <span style={{ color: "#16a34a" }}>₹{total}</span>
+          </div>
+
+          <button
+            style={{
+              width: "100%",
+              marginTop: "15px",
+              backgroundColor: "#16a34a",
+              color: "white",
+              border: "none",
+              padding: "13px",
+              borderRadius: "8px",
+              fontSize: "16px",
+              fontWeight: "700",
+              cursor: "pointer",
+            }}
+          >
+            Proceed to Checkout →
+          </button>
+        </section>
+      )}
     </main>
   );
 }
