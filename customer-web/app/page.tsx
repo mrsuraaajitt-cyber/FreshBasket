@@ -12,39 +12,40 @@ type CartItem = Product & {
   quantity: number;
 };
 
+type Customer = {
+  name: string;
+  phone: string;
+  address: string;
+  area: string;
+};
+
 const products: Product[] = [
-  {
-    image: "🥔",
-    name: "Fresh Potato",
-    price: 40,
-  },
-  {
-    image: "🍅",
-    name: "Fresh Tomato",
-    price: 50,
-  },
-  {
-    image: "🧅",
-    name: "Fresh Onion",
-    price: 45,
-  },
-  {
-    image: "🥕",
-    name: "Fresh Carrot",
-    price: 60,
-  },
+  { image: "🥔", name: "Fresh Potato", price: 40 },
+  { image: "🍅", name: "Fresh Tomato", price: 50 },
+  { image: "🧅", name: "Fresh Onion", price: 45 },
+  { image: "🥕", name: "Fresh Carrot", price: 60 },
 ];
 
 export default function Home() {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderId, setOrderId] = useState("");
+
+  const [customer, setCustomer] = useState<Customer>({
+    name: "",
+    phone: "",
+    address: "",
+    area: "",
+  });
 
   const addToCart = (product: Product) => {
     setCart((currentCart) => {
-      const existingProduct = currentCart.find(
+      const existing = currentCart.find(
         (item) => item.name === product.name
       );
 
-      if (existingProduct) {
+      if (existing) {
         return currentCart.map((item) =>
           item.name === product.name
             ? { ...item, quantity: item.quantity + 1 }
@@ -95,8 +96,43 @@ export default function Home() {
   );
 
   const deliveryCharge = cart.length > 0 ? 20 : 0;
-
   const total = subtotal + deliveryCharge;
+
+  const handleCustomerChange = (
+    field: keyof Customer,
+    value: string
+  ) => {
+    setCustomer((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const placeOrder = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (
+      !customer.name ||
+      !customer.phone ||
+      !customer.address ||
+      !customer.area
+    ) {
+      alert("Please fill all customer details.");
+      return;
+    }
+
+    if (customer.phone.length !== 10) {
+      alert("Please enter a valid 10 digit mobile number.");
+      return;
+    }
+
+    const newOrderId =
+      "FB-" + Math.floor(100000 + Math.random() * 900000);
+
+    setOrderId(newOrderId);
+    setOrderPlaced(true);
+    setShowCheckout(false);
+  };
 
   return (
     <main
@@ -139,7 +175,6 @@ export default function Home() {
             style={{
               fontSize: "15px",
               fontWeight: "600",
-              color: "#222",
             }}
           >
             📍 Your Location ▾
@@ -156,7 +191,6 @@ export default function Home() {
               border: "1px solid #d1d5db",
               borderRadius: "10px",
               fontSize: "15px",
-              outline: "none",
               boxSizing: "border-box",
             }}
           />
@@ -170,7 +204,6 @@ export default function Home() {
             padding: "11px 18px",
             borderRadius: "8px",
             fontWeight: "600",
-            cursor: "pointer",
           }}
         >
           Login
@@ -190,7 +223,7 @@ export default function Home() {
         </button>
       </header>
 
-      {/* CATEGORY MENU */}
+      {/* CATEGORY NAVIGATION */}
       <nav
         style={{
           backgroundColor: "white",
@@ -198,7 +231,6 @@ export default function Home() {
           display: "flex",
           gap: "30px",
           borderBottom: "1px solid #e5e7eb",
-          overflowX: "auto",
         }}
       >
         <span>🥕 Vegetables</span>
@@ -294,7 +326,6 @@ export default function Home() {
               }}
             >
               <div style={{ fontSize: "40px" }}>{icon}</div>
-
               <div
                 style={{
                   marginTop: "10px",
@@ -313,7 +344,6 @@ export default function Home() {
       <section
         style={{
           padding: "50px 40px 70px",
-          backgroundColor: "#f7faf7",
         }}
       >
         <h2
@@ -363,15 +393,7 @@ export default function Home() {
                   {product.image}
                 </div>
 
-                <h3
-                  style={{
-                    marginTop: "15px",
-                    fontSize: "18px",
-                    color: "#222",
-                  }}
-                >
-                  {product.name}
-                </h3>
+                <h3>{product.name}</h3>
 
                 <p
                   style={{
@@ -387,49 +409,26 @@ export default function Home() {
                   <div
                     style={{
                       display: "flex",
-                      alignItems: "center",
                       justifyContent: "space-between",
-                      gap: "8px",
+                      alignItems: "center",
                     }}
                   >
                     <button
                       onClick={() =>
                         decreaseQuantity(product.name)
                       }
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        border: "1px solid #16a34a",
-                        backgroundColor: "white",
-                        color: "#16a34a",
-                        borderRadius: "8px",
-                        fontSize: "20px",
-                        fontWeight: "700",
-                        cursor: "pointer",
-                      }}
+                      style={quantityButton}
                     >
                       −
                     </button>
 
-                    <strong style={{ fontSize: "18px" }}>
-                      {cartItem.quantity}
-                    </strong>
+                    <strong>{cartItem.quantity}</strong>
 
                     <button
                       onClick={() =>
                         increaseQuantity(product.name)
                       }
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        border: "none",
-                        backgroundColor: "#16a34a",
-                        color: "white",
-                        borderRadius: "8px",
-                        fontSize: "20px",
-                        fontWeight: "700",
-                        cursor: "pointer",
-                      }}
+                      style={quantityButtonGreen}
                     >
                       +
                     </button>
@@ -445,7 +444,6 @@ export default function Home() {
                       padding: "12px",
                       borderRadius: "8px",
                       fontWeight: "600",
-                      cursor: "pointer",
                     }}
                   >
                     + Add to Cart
@@ -458,7 +456,7 @@ export default function Home() {
       </section>
 
       {/* CART */}
-      {cart.length > 0 && (
+      {cart.length > 0 && !showCheckout && !orderPlaced && (
         <section
           style={{
             position: "fixed",
@@ -475,14 +473,7 @@ export default function Home() {
             zIndex: 10,
           }}
         >
-          <h2
-            style={{
-              marginTop: 0,
-              color: "#166534",
-            }}
-          >
-            🛒 Your Cart
-          </h2>
+          <h2 style={{ color: "#166534" }}>🛒 Your Cart</h2>
 
           {cart.map((item) => (
             <div
@@ -515,60 +506,36 @@ export default function Home() {
                   marginTop: "10px",
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
+                <div>
                   <button
                     onClick={() =>
                       decreaseQuantity(item.name)
                     }
-                    style={{
-                      width: "32px",
-                      height: "32px",
-                      border: "1px solid #16a34a",
-                      backgroundColor: "white",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "18px",
-                    }}
+                    style={smallButton}
                   >
                     −
                   </button>
 
-                  <span>{item.quantity}</span>
+                  <span style={{ margin: "0 10px" }}>
+                    {item.quantity}
+                  </span>
 
                   <button
                     onClick={() =>
                       increaseQuantity(item.name)
                     }
-                    style={{
-                      width: "32px",
-                      height: "32px",
-                      border: "none",
-                      backgroundColor: "#16a34a",
-                      color: "white",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "18px",
-                    }}
+                    style={smallGreenButton}
                   >
                     +
                   </button>
                 </div>
 
                 <button
-                  onClick={() =>
-                    removeFromCart(item.name)
-                  }
+                  onClick={() => removeFromCart(item.name)}
                   style={{
                     border: "none",
-                    backgroundColor: "transparent",
+                    background: "transparent",
                     color: "#dc2626",
-                    cursor: "pointer",
                     fontWeight: "600",
                   }}
                 >
@@ -578,47 +545,33 @@ export default function Home() {
             </div>
           ))}
 
-          {/* PRICE SUMMARY */}
           <div style={{ marginTop: "18px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "10px",
-              }}
-            >
+            <div style={summaryRow}>
               <span>Subtotal</span>
               <strong>₹{subtotal}</strong>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "10px",
-              }}
-            >
+            <div style={summaryRow}>
               <span>Delivery</span>
               <strong>₹{deliveryCharge}</strong>
             </div>
 
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                paddingTop: "12px",
+                ...summaryRow,
                 borderTop: "1px solid #ddd",
+                paddingTop: "12px",
                 fontSize: "20px",
               }}
             >
               <strong>Total</strong>
-
               <strong style={{ color: "#16a34a" }}>
                 ₹{total}
               </strong>
             </div>
 
             <button
+              onClick={() => setShowCheckout(true)}
               style={{
                 width: "100%",
                 marginTop: "18px",
@@ -629,7 +582,6 @@ export default function Home() {
                 borderRadius: "9px",
                 fontSize: "16px",
                 fontWeight: "700",
-                cursor: "pointer",
               }}
             >
               Proceed to Checkout →
@@ -637,6 +589,356 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* CHECKOUT */}
+      {showCheckout && !orderPlaced && (
+        <div style={overlayStyle}>
+          <div style={checkoutBoxStyle}>
+            <button
+              onClick={() => setShowCheckout(false)}
+              style={{
+                float: "right",
+                border: "none",
+                background: "transparent",
+                fontSize: "22px",
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
+
+            <h2 style={{ color: "#166534" }}>
+              📦 Checkout
+            </h2>
+
+            <p style={{ color: "#666" }}>
+              Enter your delivery details
+            </p>
+
+            <form onSubmit={placeOrder}>
+              <label style={labelStyle}>
+                Customer Name
+              </label>
+
+              <input
+                type="text"
+                placeholder="Enter your full name"
+                value={customer.name}
+                onChange={(e) =>
+                  handleCustomerChange("name", e.target.value)
+                }
+                style={inputStyle}
+              />
+
+              <label style={labelStyle}>
+                Mobile Number
+              </label>
+
+              <input
+                type="tel"
+                placeholder="10 digit mobile number"
+                maxLength={10}
+                value={customer.phone}
+                onChange={(e) =>
+                  handleCustomerChange(
+                    "phone",
+                    e.target.value.replace(/\D/g, "")
+                  )
+                }
+                style={inputStyle}
+              />
+
+              <label style={labelStyle}>
+                Full Address
+              </label>
+
+              <textarea
+                placeholder="House number, village, road..."
+                value={customer.address}
+                onChange={(e) =>
+                  handleCustomerChange(
+                    "address",
+                    e.target.value
+                  )
+                }
+                rows={4}
+                style={{
+                  ...inputStyle,
+                  resize: "vertical",
+                }}
+              />
+
+              <label style={labelStyle}>
+                Delivery Area
+              </label>
+
+              <input
+                type="text"
+                placeholder="Village / Town / District"
+                value={customer.area}
+                onChange={(e) =>
+                  handleCustomerChange("area", e.target.value)
+                }
+                style={inputStyle}
+              />
+
+              {/* ORDER SUMMARY */}
+              <div
+                style={{
+                  backgroundColor: "#f0fdf4",
+                  padding: "16px",
+                  borderRadius: "10px",
+                  marginTop: "20px",
+                }}
+              >
+                <h3 style={{ marginTop: 0 }}>
+                  🧾 Order Summary
+                </h3>
+
+                <div style={summaryRow}>
+                  <span>Items</span>
+                  <strong>{totalItems}</strong>
+                </div>
+
+                <div style={summaryRow}>
+                  <span>Subtotal</span>
+                  <strong>₹{subtotal}</strong>
+                </div>
+
+                <div style={summaryRow}>
+                  <span>Delivery</span>
+                  <strong>₹{deliveryCharge}</strong>
+                </div>
+
+                <div
+                  style={{
+                    ...summaryRow,
+                    borderTop: "1px solid #bbf7d0",
+                    paddingTop: "10px",
+                    fontSize: "20px",
+                  }}
+                >
+                  <strong>Total</strong>
+                  <strong style={{ color: "#16a34a" }}>
+                    ₹{total}
+                  </strong>
+                </div>
+              </div>
+
+              {/* PAYMENT */}
+              <div
+                style={{
+                  marginTop: "18px",
+                  padding: "15px",
+                  border: "2px solid #16a34a",
+                  borderRadius: "10px",
+                  backgroundColor: "#f0fdf4",
+                }}
+              >
+                <strong>💵 Payment Method</strong>
+
+                <div style={{ marginTop: "8px" }}>
+                  🟢 Cash on Delivery
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  width: "100%",
+                  marginTop: "20px",
+                  backgroundColor: "#16a34a",
+                  color: "white",
+                  border: "none",
+                  padding: "15px",
+                  borderRadius: "9px",
+                  fontSize: "17px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                }}
+              >
+                ✅ Place Order — ₹{total}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ORDER SUCCESS */}
+      {orderPlaced && (
+        <div style={overlayStyle}>
+          <div
+            style={{
+              ...checkoutBoxStyle,
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "65px" }}>🎉</div>
+
+            <h1 style={{ color: "#16a34a" }}>
+              Order Confirmed!
+            </h1>
+
+            <p style={{ fontSize: "18px" }}>
+              Thank you, {customer.name}!
+            </p>
+
+            <div
+              style={{
+                backgroundColor: "#f0fdf4",
+                padding: "18px",
+                borderRadius: "10px",
+                marginTop: "20px",
+              }}
+            >
+              <p>
+                <strong>Order ID</strong>
+              </p>
+
+              <h2 style={{ color: "#166534" }}>
+                {orderId}
+              </h2>
+
+              <p>
+                💵 Payment: Cash on Delivery
+              </p>
+
+              <p>
+                💰 Total: <strong>₹{total}</strong>
+              </p>
+
+              <p>
+                📍 Delivery Area: {customer.area}
+              </p>
+            </div>
+
+            <p
+              style={{
+                marginTop: "20px",
+                color: "#555",
+              }}
+            >
+              Your vegetables will be delivered to your
+              address.
+            </p>
+
+            <button
+              onClick={() => {
+                setOrderPlaced(false);
+                setCart([]);
+                setCustomer({
+                  name: "",
+                  phone: "",
+                  address: "",
+                  area: "",
+                });
+              }}
+              style={{
+                marginTop: "15px",
+                backgroundColor: "#16a34a",
+                color: "white",
+                border: "none",
+                padding: "13px 25px",
+                borderRadius: "8px",
+                fontWeight: "700",
+              }}
+            >
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
+
+/* STYLES */
+
+const quantityButton = {
+  width: "40px",
+  height: "40px",
+  border: "1px solid #16a34a",
+  backgroundColor: "white",
+  color: "#16a34a",
+  borderRadius: "8px",
+  fontSize: "20px",
+  fontWeight: "700",
+  cursor: "pointer",
+};
+
+const quantityButtonGreen = {
+  width: "40px",
+  height: "40px",
+  border: "none",
+  backgroundColor: "#16a34a",
+  color: "white",
+  borderRadius: "8px",
+  fontSize: "20px",
+  fontWeight: "700",
+  cursor: "pointer",
+};
+
+const smallButton = {
+  width: "32px",
+  height: "32px",
+  border: "1px solid #16a34a",
+  backgroundColor: "white",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontSize: "18px",
+};
+
+const smallGreenButton = {
+  width: "32px",
+  height: "32px",
+  border: "none",
+  backgroundColor: "#16a34a",
+  color: "white",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontSize: "18px",
+};
+
+const summaryRow = {
+  display: "flex",
+  justifyContent: "space-between",
+  marginBottom: "10px",
+};
+
+const labelStyle = {
+  display: "block",
+  marginTop: "15px",
+  marginBottom: "6px",
+  fontWeight: "600",
+};
+
+const inputStyle = {
+  width: "100%",
+  padding: "12px",
+  border: "1px solid #d1d5db",
+  borderRadius: "8px",
+  fontSize: "15px",
+  boxSizing: "border-box" as const,
+};
+
+const overlayStyle = {
+  position: "fixed" as const,
+  inset: 0,
+  backgroundColor: "rgba(0,0,0,0.55)",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  padding: "20px",
+  zIndex: 100,
+};
+
+const checkoutBoxStyle = {
+  width: "100%",
+  maxWidth: "520px",
+  maxHeight: "90vh",
+  overflowY: "auto" as const,
+  backgroundColor: "white",
+  borderRadius: "16px",
+  padding: "25px",
+  boxShadow: "0 10px 40px rgba(0,0,0,0.25)",
+};
