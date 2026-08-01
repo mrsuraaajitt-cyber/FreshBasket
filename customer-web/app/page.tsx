@@ -8,6 +8,10 @@ type Product = {
   price: number;
 };
 
+type CartItem = Product & {
+  quantity: number;
+};
+
 const products: Product[] = [
   {
     image: "🥔",
@@ -32,13 +36,67 @@ const products: Product[] = [
 ];
 
 export default function Home() {
-  const [cart, setCart] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   const addToCart = (product: Product) => {
-    setCart([...cart, product]);
+    setCart((currentCart) => {
+      const existingProduct = currentCart.find(
+        (item) => item.name === product.name
+      );
+
+      if (existingProduct) {
+        return currentCart.map((item) =>
+          item.name === product.name
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+
+      return [...currentCart, { ...product, quantity: 1 }];
+    });
   };
 
-  const total = cart.reduce((sum, product) => sum + product.price, 0);
+  const increaseQuantity = (name: string) => {
+    setCart((currentCart) =>
+      currentCart.map((item) =>
+        item.name === name
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      )
+    );
+  };
+
+  const decreaseQuantity = (name: string) => {
+    setCart((currentCart) =>
+      currentCart
+        .map((item) =>
+          item.name === name
+            ? { ...item, quantity: item.quantity - 1 }
+            : item
+        )
+        .filter((item) => item.quantity > 0)
+    );
+  };
+
+  const removeFromCart = (name: string) => {
+    setCart((currentCart) =>
+      currentCart.filter((item) => item.name !== name)
+    );
+  };
+
+  const totalItems = cart.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
+
+  const subtotal = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const deliveryCharge = cart.length > 0 ? 20 : 0;
+
+  const total = subtotal + deliveryCharge;
 
   return (
     <main
@@ -59,7 +117,6 @@ export default function Home() {
           borderBottom: "1px solid #e5e7eb",
         }}
       >
-        {/* LOGO */}
         <div style={{ minWidth: "180px" }}>
           <h1
             style={{
@@ -73,9 +130,10 @@ export default function Home() {
           </h1>
         </div>
 
-        {/* LOCATION */}
         <div style={{ minWidth: "180px" }}>
-          <div style={{ fontSize: "13px", color: "#777" }}>Deliver to</div>
+          <div style={{ fontSize: "13px", color: "#777" }}>
+            Deliver to
+          </div>
 
           <div
             style={{
@@ -88,7 +146,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* SEARCH */}
         <div style={{ flex: 1 }}>
           <input
             type="text"
@@ -105,7 +162,6 @@ export default function Home() {
           />
         </div>
 
-        {/* LOGIN */}
         <button
           style={{
             background: "white",
@@ -120,7 +176,6 @@ export default function Home() {
           Login
         </button>
 
-        {/* CART */}
         <button
           style={{
             background: "#16a34a",
@@ -129,10 +184,9 @@ export default function Home() {
             padding: "12px 18px",
             borderRadius: "8px",
             fontWeight: "600",
-            cursor: "pointer",
           }}
         >
-          🛒 Cart ({cart.length})
+          🛒 Cart ({totalItems})
         </button>
       </header>
 
@@ -191,7 +245,6 @@ export default function Home() {
             borderRadius: "10px",
             fontSize: "17px",
             fontWeight: "600",
-            cursor: "pointer",
           }}
         >
           Shop Fresh Vegetables →
@@ -238,7 +291,6 @@ export default function Home() {
                 borderRadius: "12px",
                 textAlign: "center",
                 border: "1px solid #dcfce7",
-                cursor: "pointer",
               }}
             >
               <div style={{ fontSize: "40px" }}>{icon}</div>
@@ -281,84 +333,146 @@ export default function Home() {
             gap: "20px",
           }}
         >
-          {products.map((product) => (
-            <div
-              key={product.name}
-              style={{
-                backgroundColor: "white",
-                borderRadius: "14px",
-                padding: "20px",
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 3px 10px rgba(0,0,0,0.05)",
-              }}
-            >
+          {products.map((product) => {
+            const cartItem = cart.find(
+              (item) => item.name === product.name
+            );
+
+            return (
               <div
+                key={product.name}
                 style={{
-                  height: "150px",
-                  backgroundColor: "#f0fdf4",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "75px",
+                  backgroundColor: "white",
+                  borderRadius: "14px",
+                  padding: "20px",
+                  border: "1px solid #e5e7eb",
+                  boxShadow: "0 3px 10px rgba(0,0,0,0.05)",
                 }}
               >
-                {product.image}
+                <div
+                  style={{
+                    height: "150px",
+                    backgroundColor: "#f0fdf4",
+                    borderRadius: "10px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "75px",
+                  }}
+                >
+                  {product.image}
+                </div>
+
+                <h3
+                  style={{
+                    marginTop: "15px",
+                    fontSize: "18px",
+                    color: "#222",
+                  }}
+                >
+                  {product.name}
+                </h3>
+
+                <p
+                  style={{
+                    color: "#16a34a",
+                    fontSize: "18px",
+                    fontWeight: "700",
+                  }}
+                >
+                  ₹{product.price} / kg
+                </p>
+
+                {cartItem ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "8px",
+                    }}
+                  >
+                    <button
+                      onClick={() =>
+                        decreaseQuantity(product.name)
+                      }
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        border: "1px solid #16a34a",
+                        backgroundColor: "white",
+                        color: "#16a34a",
+                        borderRadius: "8px",
+                        fontSize: "20px",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                      }}
+                    >
+                      −
+                    </button>
+
+                    <strong style={{ fontSize: "18px" }}>
+                      {cartItem.quantity}
+                    </strong>
+
+                    <button
+                      onClick={() =>
+                        increaseQuantity(product.name)
+                      }
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        border: "none",
+                        backgroundColor: "#16a34a",
+                        color: "white",
+                        borderRadius: "8px",
+                        fontSize: "20px",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => addToCart(product)}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#16a34a",
+                      color: "white",
+                      border: "none",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                    }}
+                  >
+                    + Add to Cart
+                  </button>
+                )}
               </div>
-
-              <h3
-                style={{
-                  marginTop: "15px",
-                  fontSize: "18px",
-                  color: "#222",
-                }}
-              >
-                {product.name}
-              </h3>
-
-              <p
-                style={{
-                  color: "#16a34a",
-                  fontSize: "18px",
-                  fontWeight: "700",
-                }}
-              >
-                ₹{product.price} / kg
-              </p>
-
-              <button
-                onClick={() => addToCart(product)}
-                style={{
-                  width: "100%",
-                  backgroundColor: "#16a34a",
-                  color: "white",
-                  border: "none",
-                  padding: "12px",
-                  borderRadius: "8px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                }}
-              >
-                + Add to Cart
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
-      {/* CART SUMMARY */}
+      {/* CART */}
       {cart.length > 0 && (
         <section
           style={{
             position: "fixed",
             right: "25px",
             bottom: "25px",
-            width: "320px",
+            width: "350px",
+            maxHeight: "75vh",
+            overflowY: "auto",
             backgroundColor: "white",
-            borderRadius: "15px",
-            padding: "20px",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.18)",
+            borderRadius: "16px",
+            padding: "22px",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
             border: "1px solid #e5e7eb",
+            zIndex: 10,
           }}
         >
           <h2
@@ -370,53 +484,157 @@ export default function Home() {
             🛒 Your Cart
           </h2>
 
-          {cart.map((product, index) => (
+          {cart.map((item) => (
             <div
-              key={index}
+              key={item.name}
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "8px 0",
+                padding: "12px 0",
                 borderBottom: "1px solid #eee",
               }}
             >
-              <span>
-                {product.image} {product.name}
-              </span>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <strong>
+                  {item.image} {item.name}
+                </strong>
 
-              <strong>₹{product.price}</strong>
+                <strong>
+                  ₹{item.price * item.quantity}
+                </strong>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
+                >
+                  <button
+                    onClick={() =>
+                      decreaseQuantity(item.name)
+                    }
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      border: "1px solid #16a34a",
+                      backgroundColor: "white",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "18px",
+                    }}
+                  >
+                    −
+                  </button>
+
+                  <span>{item.quantity}</span>
+
+                  <button
+                    onClick={() =>
+                      increaseQuantity(item.name)
+                    }
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      border: "none",
+                      backgroundColor: "#16a34a",
+                      color: "white",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "18px",
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
+
+                <button
+                  onClick={() =>
+                    removeFromCart(item.name)
+                  }
+                  style={{
+                    border: "none",
+                    backgroundColor: "transparent",
+                    color: "#dc2626",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                  }}
+                >
+                  🗑️ Remove
+                </button>
+              </div>
             </div>
           ))}
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginTop: "15px",
-              fontSize: "20px",
-              fontWeight: "800",
-            }}
-          >
-            <span>Total</span>
-            <span style={{ color: "#16a34a" }}>₹{total}</span>
-          </div>
+          {/* PRICE SUMMARY */}
+          <div style={{ marginTop: "18px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "10px",
+              }}
+            >
+              <span>Subtotal</span>
+              <strong>₹{subtotal}</strong>
+            </div>
 
-          <button
-            style={{
-              width: "100%",
-              marginTop: "15px",
-              backgroundColor: "#16a34a",
-              color: "white",
-              border: "none",
-              padding: "13px",
-              borderRadius: "8px",
-              fontSize: "16px",
-              fontWeight: "700",
-              cursor: "pointer",
-            }}
-          >
-            Proceed to Checkout →
-          </button>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "10px",
+              }}
+            >
+              <span>Delivery</span>
+              <strong>₹{deliveryCharge}</strong>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                paddingTop: "12px",
+                borderTop: "1px solid #ddd",
+                fontSize: "20px",
+              }}
+            >
+              <strong>Total</strong>
+
+              <strong style={{ color: "#16a34a" }}>
+                ₹{total}
+              </strong>
+            </div>
+
+            <button
+              style={{
+                width: "100%",
+                marginTop: "18px",
+                backgroundColor: "#16a34a",
+                color: "white",
+                border: "none",
+                padding: "14px",
+                borderRadius: "9px",
+                fontSize: "16px",
+                fontWeight: "700",
+                cursor: "pointer",
+              }}
+            >
+              Proceed to Checkout →
+            </button>
+          </div>
         </section>
       )}
     </main>
